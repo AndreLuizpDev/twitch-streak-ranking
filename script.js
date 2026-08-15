@@ -270,6 +270,9 @@ window.addEventListener("DOMContentLoaded", () => {
     channelLink.textContent = `@${TWITCH_CHANNEL}`;
   }
 
+  // ensure footer shows current project version on initial load
+  populateFooter();
+
   // initial fetch with defaults or previously saved settings
   fetchStreaks();
 });
