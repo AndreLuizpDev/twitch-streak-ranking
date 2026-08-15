@@ -1,9 +1,8 @@
 let TWITCH_CHANNEL = "mrfalll";
 let API_LIMIT = 50;
 const LOCAL_PROXY_BASE = 'http://localhost:3000';
-// If you deploy a proxy (Cloudflare Worker, Netlify/Vercel function), set its URL here.
-// Example Worker URL: 'https://your-worker.workers.dev'
-const DEPLOYED_PROXY = '';
+// When developing on localhost use the local proxy. In production the
+// site will call the lumosbot API directly (set up a proxy if CORS is required).
 
 function getApiUrl(channel = TWITCH_CHANNEL, limit = API_LIMIT) {
   return `https://lumosbot.app/api/twitch/streaks/${encodeURIComponent(channel)}?limit=${encodeURIComponent(limit)}`;
@@ -15,14 +14,9 @@ function getApiProxyUrl() {
     return `${LOCAL_PROXY_BASE}/proxy/streaks/${encodeURIComponent(TWITCH_CHANNEL)}?limit=${encodeURIComponent(API_LIMIT)}`;
   }
 
-  // Use deployed proxy in production (GitHub Pages)
-  if (DEPLOYED_PROXY && DEPLOYED_PROXY.length) {
-    // Deployed proxy expects channel & limit as query params
-    return `${DEPLOYED_PROXY}?channel=${encodeURIComponent(TWITCH_CHANNEL)}&limit=${encodeURIComponent(API_LIMIT)}`;
-  }
-
-  // No proxy configured — fail early with a helpful error
-  throw new Error('No proxy configured for production. Set DEPLOYED_PROXY in script.js or deploy a proxy to avoid CORS issues.');
+  // In production, call the lumosbot API directly. Note: this may require
+  // a CORS-enabled proxy if the API does not allow cross-origin requests.
+  return getApiUrl(TWITCH_CHANNEL, API_LIMIT);
 }
 
 function getTwitchChannelUrl() {
@@ -40,7 +34,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.0';
+const PROJECT_VERSION = '1.0.1';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
