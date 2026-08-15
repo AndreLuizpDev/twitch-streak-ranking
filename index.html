@@ -48,6 +48,26 @@
           </button>
         </section>
 
+        <!-- Settings modal (channel + limit) -->
+        <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+          <div class="modal-backdrop" id="modalBackdrop"></div>
+          <div class="modal-panel" role="document">
+            <h3>Configurar consulta</h3>
+            <form id="settingsForm">
+              <label for="channelInput">Canal (ex: mrfalll)</label>
+              <input id="channelInput" name="channel" type="text" placeholder="mrfalll" required />
+
+              <label for="limitInput">Limite dados</label>
+              <input id="limitInput" name="limit" type="number" min="1" max="500" step="1" required />
+
+              <div class="modal-actions">
+                <button type="button" id="cancelSettings" class="btn">Cancelar</button>
+                <button type="submit" id="saveSettings" class="btn primary">Aplicar e Atualizar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <section class="ranking-panel">
           <div class="list-header">
             <span>Posição</span>

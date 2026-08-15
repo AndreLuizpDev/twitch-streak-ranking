@@ -1,15 +1,32 @@
-const TWITCH_CHANNEL = "mrfalll";
-const API_LIMIT = 50;
-const API_URL = `https://lumosbot.app/api/twitch/streaks/${TWITCH_CHANNEL}?limit=${API_LIMIT}`;
+let TWITCH_CHANNEL = "mrfalll";
+let API_LIMIT = 50;
 const LOCAL_PROXY_BASE = 'http://localhost:3000';
-const API_PROXY_URL = (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
-  ? `${LOCAL_PROXY_BASE}/proxy/streaks/${encodeURIComponent(TWITCH_CHANNEL)}?limit=${API_LIMIT}`
-  : `https://api.allorigins.win/raw?url=${encodeURIComponent(API_URL)}`;
-const TWITCH_CHANNEL_URL = `https://www.twitch.tv/${TWITCH_CHANNEL}`;
+
+function getApiUrl(channel = TWITCH_CHANNEL, limit = API_LIMIT) {
+  return `https://lumosbot.app/api/twitch/streaks/${encodeURIComponent(channel)}?limit=${encodeURIComponent(limit)}`;
+}
+
+function getApiProxyUrl() {
+  const apiUrl = getApiUrl();
+  if (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    return `${LOCAL_PROXY_BASE}/proxy/streaks/${encodeURIComponent(TWITCH_CHANNEL)}?limit=${encodeURIComponent(API_LIMIT)}`;
+  }
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+}
+
+function getTwitchChannelUrl() {
+  return `https://www.twitch.tv/${TWITCH_CHANNEL}`;
+}
 const rankingList = document.getElementById("rankingList");
 const statusBar = document.getElementById("statusBar");
 const refreshButton = document.getElementById("refreshButton");
 const channelLink = document.getElementById("channelLink");
+const settingsModal = document.getElementById('settingsModal');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const settingsForm = document.getElementById('settingsForm');
+const channelInput = document.getElementById('channelInput');
+const limitInput = document.getElementById('limitInput');
+const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
 
@@ -60,6 +77,45 @@ function processRanking(data) {
     }))
     .sort((first, second) => second.streak - first.streak)
     .slice(0, 10);
+}
+
+function loadSettingsFromSession() {
+  try {
+    const ch = sessionStorage.getItem('streak_channel');
+    const lim = sessionStorage.getItem('streak_limit');
+    if (ch) TWITCH_CHANNEL = ch;
+    if (lim && !Number.isNaN(Number(lim))) API_LIMIT = Number(lim);
+  } catch (e) {
+    // ignore
+  }
+}
+
+function openSettingsModal() {
+  if (!settingsModal) return fetchStreaks();
+  channelInput.value = sessionStorage.getItem('streak_channel') || TWITCH_CHANNEL;
+  limitInput.value = sessionStorage.getItem('streak_limit') || API_LIMIT;
+  settingsModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeSettingsModal() {
+  if (!settingsModal) return;
+  settingsModal.setAttribute('aria-hidden', 'true');
+}
+
+function applySettingsAndFetch(channelVal, limitVal) {
+  const channel = (channelVal || '').toString().trim() || TWITCH_CHANNEL;
+  const limit = Number(limitVal) || API_LIMIT;
+  TWITCH_CHANNEL = channel;
+  API_LIMIT = limit;
+  try {
+    sessionStorage.setItem('streak_channel', TWITCH_CHANNEL);
+    sessionStorage.setItem('streak_limit', String(API_LIMIT));
+  } catch (e) {}
+  if (channelLink) {
+    channelLink.href = getTwitchChannelUrl();
+    channelLink.textContent = `@${TWITCH_CHANNEL}`;
+  }
+  fetchStreaks();
 }
 
 function getUserInitials(userName) {
@@ -121,7 +177,7 @@ async function fetchStreaks() {
   setStatus("Carregando ranking...", "loading");
 
   try {
-    const response = await fetch(API_PROXY_URL);
+    const response = await fetch(getApiProxyUrl());
 
     if (!response.ok) {
       renderEmptyState("Não foi possível carregar o ranking agora.");
@@ -165,14 +221,39 @@ async function fetchStreaks() {
   }
 }
 
-refreshButton.addEventListener("click", fetchStreaks);
+// Open modal on refresh; modal will trigger fetch when submitted
+refreshButton.addEventListener("click", openSettingsModal);
+
+if (modalBackdrop) {
+  modalBackdrop.addEventListener('click', closeSettingsModal);
+}
+
+if (cancelSettings) {
+  cancelSettings.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeSettingsModal();
+  });
+}
+
+if (settingsForm) {
+  settingsForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const ch = channelInput.value;
+    const lim = limitInput.value;
+    closeSettingsModal();
+    applySettingsAndFetch(ch, lim);
+  });
+}
 
 window.addEventListener("DOMContentLoaded", () => {
+  loadSettingsFromSession();
+
   if (channelLink) {
-    channelLink.href = TWITCH_CHANNEL_URL;
+    channelLink.href = getTwitchChannelUrl();
     channelLink.textContent = `@${TWITCH_CHANNEL}`;
   }
 
+  // initial fetch with defaults or previously saved settings
   fetchStreaks();
 });
 
