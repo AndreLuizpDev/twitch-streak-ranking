@@ -1,8 +1,11 @@
 let TWITCH_CHANNEL = "mrfalll";
 let API_LIMIT = 50;
 const LOCAL_PROXY_BASE = 'http://localhost:3000';
-// When developing on localhost use the local proxy. In production the
-// site will call the lumosbot API directly (set up a proxy if CORS is required).
+// When developing on localhost use the local proxy. In production you can
+// set `DEPLOYED_PROXY` to a Cloudflare Worker or serverless function URL
+// that forwards requests to the lumosbot API and adds CORS headers.
+// Example: const DEPLOYED_PROXY = 'https://your-worker-name.workers.dev';
+const DEPLOYED_PROXY = '';
 
 function getApiUrl(channel = TWITCH_CHANNEL, limit = API_LIMIT) {
   return `https://lumosbot.app/api/twitch/streaks/${encodeURIComponent(channel)}?limit=${encodeURIComponent(limit)}`;
