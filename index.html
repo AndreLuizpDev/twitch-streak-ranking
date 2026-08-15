@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Ranking dos maiores streaks de inscritos do canal da Twitch mrfalll."
+    />
+    <title>Ranking de Streaks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="brand-icon">🔥</div>
+          <div>
+            <!-- <p class="eyebrow">Canal oficial</p> -->
+            <h1>Ranking de Streaks</h1>
+          </div>
+        </div>
+        <a
+          id="channelLink"
+          class="channel-link"
+          href="#"
+          target="_blank"
+          rel="noreferrer"
+        >
+          @carregando...
+        </a>
+      </header>
+
+      <main class="container">
+        <section class="hero">
+          <div>
+            <p class="subtitle">Top 10 maiores streaks</p>
+          </div>
+          <button id="refreshButton" class="refresh-button" type="button">
+            <span class="button-icon">↻</span>
+            Atualizar
+          </button>
+        </section>
+
+        <section class="ranking-panel">
+          <div class="list-header">
+            <span>Posição</span>
+            <span>Usuário</span>
+            <span>Streak</span>
+            <span>Última atualização</span>
+          </div>
+          <div id="rankingList" class="ranking-list" aria-live="polite"></div>
+        </section>
+
+        <div id="statusBar" class="status-bar" aria-live="polite"></div>
+        
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
