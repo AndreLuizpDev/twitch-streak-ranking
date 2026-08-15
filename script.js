@@ -33,6 +33,7 @@ const rankingList = document.getElementById("rankingList");
 const statusBar = document.getElementById("statusBar");
 const refreshButton = document.getElementById("refreshButton");
 const channelLink = document.getElementById("channelLink");
+const topSubtitle = document.getElementById("topSubtitle");
 const settingsModal = document.getElementById('settingsModal');
 const modalBackdrop = document.getElementById('modalBackdrop');
 const settingsForm = document.getElementById('settingsForm');
@@ -41,7 +42,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.2';
+const PROJECT_VERSION = '1.0.3';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
@@ -89,7 +90,7 @@ function processRanking(data) {
       streak: normalizeStreak(item.streak),
     }))
     .sort((first, second) => second.streak - first.streak)
-    .slice(0, 10);
+    .slice(0, API_LIMIT);
 }
 
 function loadSettingsFromSession() {
@@ -129,6 +130,7 @@ function applySettingsAndFetch(channelVal, limitVal) {
     channelLink.textContent = `@${TWITCH_CHANNEL}`;
   }
 
+  updateTopSubtitle();
   populateFooter();
   fetchStreaks();
 }
@@ -160,6 +162,11 @@ function populateFooter() {
   if (verEl) verEl.textContent = `v${PROJECT_VERSION}`;
   if (apiRepo) apiRepo.href = 'https://github.com/TomGoulart';
   if (siteRepo) siteRepo.href = 'https://github.com/AndreLuizpDev';
+}
+
+function updateTopSubtitle() {
+  if (!topSubtitle) return;
+  topSubtitle.textContent = `Top ${API_LIMIT} maiores streaks`;
 }
 
 function renderRanking(items, emptyMessage = "Nenhum streak encontrado.") {
@@ -277,6 +284,7 @@ window.addEventListener("DOMContentLoaded", () => {
     channelLink.textContent = `@${TWITCH_CHANNEL}`;
   }
 
+  updateTopSubtitle();
   // ensure footer shows current project version on initial load
   populateFooter();
 
