@@ -5,7 +5,7 @@ const LOCAL_PROXY_BASE = 'http://localhost:3000';
 // set `DEPLOYED_PROXY` to a Cloudflare Worker or serverless function URL
 // that forwards requests to the lumosbot API and adds CORS headers.
 // Example: const DEPLOYED_PROXY = 'https://your-worker-name.workers.dev';
-const DEPLOYED_PROXY = '';
+const DEPLOYED_PROXY = 'https://twitch-streak-ranking.andreldsantosp.workers.dev';
 
 function getApiUrl(channel = TWITCH_CHANNEL, limit = API_LIMIT) {
   return `https://lumosbot.app/api/twitch/streaks/${encodeURIComponent(channel)}?limit=${encodeURIComponent(limit)}`;
@@ -17,8 +17,12 @@ function getApiProxyUrl() {
     return `${LOCAL_PROXY_BASE}/proxy/streaks/${encodeURIComponent(TWITCH_CHANNEL)}?limit=${encodeURIComponent(API_LIMIT)}`;
   }
 
-  // In production, call the lumosbot API directly. Note: this may require
-  // a CORS-enabled proxy if the API does not allow cross-origin requests.
+  // If a deployed proxy is configured, use it (expects channel & limit as query params)
+  if (DEPLOYED_PROXY && DEPLOYED_PROXY.length) {
+    return `${DEPLOYED_PROXY}?channel=${encodeURIComponent(TWITCH_CHANNEL)}&limit=${encodeURIComponent(API_LIMIT)}`;
+  }
+
+  // Otherwise call the API directly (may fail due to CORS).
   return getApiUrl(TWITCH_CHANNEL, API_LIMIT);
 }
 
@@ -37,7 +41,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.1';
+const PROJECT_VERSION = '1.0.2';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
