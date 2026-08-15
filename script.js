@@ -1,17 +1,28 @@
 let TWITCH_CHANNEL = "mrfalll";
 let API_LIMIT = 50;
 const LOCAL_PROXY_BASE = 'http://localhost:3000';
+// If you deploy a proxy (Cloudflare Worker, Netlify/Vercel function), set its URL here.
+// Example Worker URL: 'https://your-worker.workers.dev'
+const DEPLOYED_PROXY = '';
 
 function getApiUrl(channel = TWITCH_CHANNEL, limit = API_LIMIT) {
   return `https://lumosbot.app/api/twitch/streaks/${encodeURIComponent(channel)}?limit=${encodeURIComponent(limit)}`;
 }
 
 function getApiProxyUrl() {
-  const apiUrl = getApiUrl();
+  // Prefer local proxy when developing on localhost
   if (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
     return `${LOCAL_PROXY_BASE}/proxy/streaks/${encodeURIComponent(TWITCH_CHANNEL)}?limit=${encodeURIComponent(API_LIMIT)}`;
   }
-  return `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+
+  // Use deployed proxy in production (GitHub Pages)
+  if (DEPLOYED_PROXY && DEPLOYED_PROXY.length) {
+    // Deployed proxy expects channel & limit as query params
+    return `${DEPLOYED_PROXY}?channel=${encodeURIComponent(TWITCH_CHANNEL)}&limit=${encodeURIComponent(API_LIMIT)}`;
+  }
+
+  // No proxy configured — fail early with a helpful error
+  throw new Error('No proxy configured for production. Set DEPLOYED_PROXY in script.js or deploy a proxy to avoid CORS issues.');
 }
 
 function getTwitchChannelUrl() {

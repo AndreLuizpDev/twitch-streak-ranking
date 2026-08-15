@@ -39,6 +39,8 @@ Como a API externa pode não permitir CORS direto em navegadores, o projeto ofer
 
 - Usar um proxy público (fallback) — `api.allorigins.win` — útil para demos rápidas.
 - Rodar um proxy local (recomendado em desenvolvimento) que encaminha as requisições e adiciona os cabeçalhos CORS.
+- Usar um proxy público (fallback) — útil para demos rápidas, mas serviços públicos podem ser instáveis ou bloquear certas origens.
+- Rodar um proxy local (recomendado em desenvolvimento) que encaminha as requisições e adiciona os cabeçalhos CORS.
 
 Para rodar o proxy local (opcional):
 
