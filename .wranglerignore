@@ -1,0 +1,14 @@
+# Ignore common large or unnecessary files when Wrangler packages assets
+node_modules/
+**/node_modules/
+.git/
+.github/
+.vscode/
+dist/
+build/
+*.log
+*.tgz
+.DS_Store
+
+# Keep the cloudflare-worker folder (our worker entrypoint)
+# but ignore other repo files that shouldn't be uploaded as assets.
