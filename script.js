@@ -29,6 +29,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
+const PROJECT_VERSION = '1.0.0';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
@@ -115,6 +116,8 @@ function applySettingsAndFetch(channelVal, limitVal) {
     channelLink.href = getTwitchChannelUrl();
     channelLink.textContent = `@${TWITCH_CHANNEL}`;
   }
+
+  populateFooter();
   fetchStreaks();
 }
 
@@ -136,6 +139,15 @@ function getUserInitials(userName) {
 
 function renderEmptyState(message = "Nenhum streak encontrado.") {
   rankingList.innerHTML = `<div class="empty-state">${message}</div>`;
+}
+
+function populateFooter() {
+  const verEl = document.getElementById('projectVersion');
+  const apiRepo = document.getElementById('apiRepoLink');
+  const siteRepo = document.getElementById('siteRepoLink');
+  if (verEl) verEl.textContent = `v${PROJECT_VERSION}`;
+  if (apiRepo) apiRepo.href = 'https://github.com/TomGoulart';
+  if (siteRepo) siteRepo.href = 'https://github.com/AndreLuizpDev';
 }
 
 function renderRanking(items, emptyMessage = "Nenhum streak encontrado.") {
