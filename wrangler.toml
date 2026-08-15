@@ -1,0 +1,11 @@
+name = "twitch-streak-proxy"
+main = "cloudflare-worker/worker.js"
+compatibility_date = "2026-08-15"
+type = "javascript"
+
+# Notes:
+# - This minimal config ensures Wrangler publishes only the Worker entrypoint
+#   instead of treating the repository root as an assets directory (which
+#   caused large files like node_modules to be uploaded).
+# - If you need to serve static assets via Workers, set an `assets` section
+#   or use a separate `public/` folder and configure `assets.directory`.
