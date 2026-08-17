@@ -42,7 +42,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.3';
+const PROJECT_VERSION = '1.0.4';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
@@ -196,11 +196,40 @@ function renderRanking(items, emptyMessage = "Nenhum streak encontrado.") {
         <span class="streak-number">${item.streak}</span>
         <span class="streak-label">streaks</span>
       </div>
-      <div class="updated-cell">${item.updatedAt || "Sem data disponível"}</div>
+      <div class="updated-cell">${convertToLocalTime(item.updatedAt)}</div>
     `;
 
     rankingList.appendChild(row);
   });
+}
+
+function convertToLocalTime(utcDateString) {
+  if (!utcDateString) return "Sem data disponível";
+
+  // Converte "17/08/2026, 13:24:42" para partes
+  const match = utcDateString.match(
+    /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/
+  );
+
+  if (!match) return utcDateString;
+
+  const [, day, month, year, hour, minute, second] = match;
+
+  // Cria a data explicitamente como UTC
+  const date = new Date(Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second)
+  ));
+
+  // Converte automaticamente para o fuso do usuário
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "short",
+    timeStyle: "medium"
+  }).format(date);
 }
 
 async function fetchStreaks() {

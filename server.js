@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
+app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 3000;
 
@@ -14,6 +15,7 @@ app.get('/proxy/streaks/:channel', async (req, res) => {
     const url = `https://lumosbot.app/api/twitch/streaks/${encodeURIComponent(channel)}?limit=${encodeURIComponent(limit)}`;
 
     const response = await fetch(url, { timeout: 10000 });
+
     if (!response.ok) {
       const text = await response.text();
       return res.status(response.status).send(text);
