@@ -42,7 +42,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.4';
+const PROJECT_VERSION = '1.0.5';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
