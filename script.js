@@ -1,5 +1,6 @@
 let TWITCH_CHANNEL = "mrfalll";
 let API_LIMIT = 50;
+let API_MAX_LIMIT = null;
 const LOCAL_PROXY_BASE = 'http://localhost:3000';
 // When developing on localhost use the local proxy. In production you can
 // set `DEPLOYED_PROXY` to a Cloudflare Worker or serverless function URL
@@ -42,7 +43,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.5';
+const PROJECT_VERSION = '1.0.6';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
@@ -104,10 +105,56 @@ function loadSettingsFromSession() {
   }
 }
 
+function saveSettingsToSession() {
+  try {
+    sessionStorage.setItem('streak_channel', TWITCH_CHANNEL);
+    sessionStorage.setItem('streak_limit', String(API_LIMIT));
+  } catch (e) {}
+}
+
+function updateLimitInputConstraints() {
+  if (!limitInput) return;
+
+  if (API_MAX_LIMIT) {
+    limitInput.max = String(API_MAX_LIMIT);
+    limitInput.title = `A API permite no máximo ${API_MAX_LIMIT} registros.`;
+  } else {
+    limitInput.removeAttribute('max');
+    limitInput.removeAttribute('title');
+  }
+}
+
+function extractApiMaximum(data) {
+  if (!data || typeof data.detail !== 'string') return null;
+
+  try {
+    const details = JSON.parse(data.detail);
+    const maximum = details.find((detail) => detail?.maximum)?.maximum;
+    return Number.isFinite(Number(maximum)) ? Number(maximum) : null;
+  } catch (error) {
+    const match = data.detail.match(/maximum[^\d]*(\d+)/i);
+    return match ? Number(match[1]) : null;
+  }
+}
+
+function applyDiscoveredMaximum(maximum) {
+  if (!Number.isInteger(maximum) || maximum < 1) return false;
+
+  API_MAX_LIMIT = maximum;
+  if (API_LIMIT > API_MAX_LIMIT) {
+    API_LIMIT = API_MAX_LIMIT;
+    saveSettingsToSession();
+    updateTopSubtitle();
+  }
+  updateLimitInputConstraints();
+  return true;
+}
+
 function openSettingsModal() {
   if (!settingsModal) return fetchStreaks();
   channelInput.value = sessionStorage.getItem('streak_channel') || TWITCH_CHANNEL;
   limitInput.value = sessionStorage.getItem('streak_limit') || API_LIMIT;
+  updateLimitInputConstraints();
   settingsModal.setAttribute('aria-hidden', 'false');
 }
 
@@ -118,19 +165,18 @@ function closeSettingsModal() {
 
 function applySettingsAndFetch(channelVal, limitVal) {
   const channel = (channelVal || '').toString().trim() || TWITCH_CHANNEL;
-  const limit = Number(limitVal) || API_LIMIT;
+  const requestedLimit = Number(limitVal);
+  const limit = Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : API_LIMIT);
   TWITCH_CHANNEL = channel;
-  API_LIMIT = limit;
-  try {
-    sessionStorage.setItem('streak_channel', TWITCH_CHANNEL);
-    sessionStorage.setItem('streak_limit', String(API_LIMIT));
-  } catch (e) {}
+  API_LIMIT = API_MAX_LIMIT ? Math.min(limit, API_MAX_LIMIT) : limit;
+  saveSettingsToSession();
   if (channelLink) {
     channelLink.href = getTwitchChannelUrl();
     channelLink.textContent = `@${TWITCH_CHANNEL}`;
   }
 
   updateTopSubtitle();
+  updateLimitInputConstraints();
   populateFooter();
   fetchStreaks();
 }
@@ -232,25 +278,32 @@ function convertToLocalTime(utcDateString) {
   }).format(date);
 }
 
-async function fetchStreaks() {
+async function fetchStreaks({ retryOnLimit = true } = {}) {
   setLoadingState(true);
   setStatus("Carregando ranking...", "loading");
 
   try {
     const response = await fetch(getApiProxyUrl());
 
-    if (!response.ok) {
-      renderEmptyState("Não foi possível carregar o ranking agora.");
-      throw new Error(`Erro HTTP: ${response.status}`);
-    }
-
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("application/json") && !contentType.includes("text/json")) {
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (error) {
       renderEmptyState("A resposta da API não está em JSON válido.");
       throw new Error("Resposta inválida da API.");
     }
 
-    const data = await response.json();
+    const discoveredMaximum = extractApiMaximum(data);
+    if (discoveredMaximum && retryOnLimit && applyDiscoveredMaximum(discoveredMaximum)) {
+      setStatus(`A API permite no máximo ${discoveredMaximum}. Ajustando consulta...`, "loading");
+      return fetchStreaks({ retryOnLimit: false });
+    }
+
+    if (!response.ok) {
+      renderEmptyState("Não foi possível carregar o ranking agora.");
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
 
     if (!data || data.success === false) {
       renderEmptyState("A API retornou uma resposta inválida.");
@@ -314,6 +367,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   updateTopSubtitle();
+  updateLimitInputConstraints();
   // ensure footer shows current project version on initial load
   populateFooter();
 

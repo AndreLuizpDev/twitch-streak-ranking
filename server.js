@@ -18,7 +18,11 @@ app.get('/proxy/streaks/:channel', async (req, res) => {
 
     if (!response.ok) {
       const text = await response.text();
-      return res.status(response.status).send(text);
+      try {
+        return res.status(response.status).json(JSON.parse(text));
+      } catch (error) {
+        return res.status(response.status).type('text').send(text);
+      }
     }
 
     const json = await response.json();
