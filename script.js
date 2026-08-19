@@ -43,7 +43,7 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.6';
+const PROJECT_VERSION = '1.0.7';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
@@ -252,26 +252,28 @@ function renderRanking(items, emptyMessage = "Nenhum streak encontrado.") {
 function convertToLocalTime(utcDateString) {
   if (!utcDateString) return "Sem data disponível";
 
-  // Converte "17/08/2026, 13:24:42" para partes
-  const match = utcDateString.match(
-    /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/
-  );
+  let date = new Date(utcDateString);
 
-  if (!match) return utcDateString;
+  // Keep compatibility with the previous API format: DD/MM/YYYY, HH:MM:SS.
+  if (Number.isNaN(date.getTime())) {
+    const match = String(utcDateString).match(
+      /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/
+    );
 
-  const [, day, month, year, hour, minute, second] = match;
+    if (!match) return utcDateString;
 
-  // Cria a data explicitamente como UTC
-  const date = new Date(Date.UTC(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hour),
-    Number(minute),
-    Number(second)
-  ));
+    const [, day, month, year, hour, minute, second] = match;
+    date = new Date(Date.UTC(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    ));
+  }
 
-  // Converte automaticamente para o fuso do usuário
+  // ISO timestamps ending in Z are UTC and are converted to the user's timezone.
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "short",
     timeStyle: "medium"
