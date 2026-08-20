@@ -2,6 +2,7 @@ let TWITCH_CHANNEL = "mrfalll";
 let API_LIMIT = 50;
 let API_MAX_LIMIT = null;
 const LOCAL_PROXY_BASE = 'http://localhost:3000';
+const PROJECT_VERSION = '1.0.8';
 // When developing on localhost use the local proxy. In production you can
 // set `DEPLOYED_PROXY` to a Cloudflare Worker or serverless function URL
 // that forwards requests to the lumosbot API and adds CORS headers.
@@ -43,7 +44,6 @@ const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
 
 let lastQueryTimestamp = null;
-const PROJECT_VERSION = '1.0.7';
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
@@ -71,6 +71,49 @@ function formatLastQueryDate(date) {
 function normalizeStreak(value) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function parseUpdatedDate(dateValue) {
+  if (!dateValue) return null;
+
+  let date = new Date(dateValue);
+
+  // Keep compatibility with the previous API format: DD/MM/YYYY, HH:MM:SS.
+  if (Number.isNaN(date.getTime())) {
+    const match = String(dateValue).match(
+      /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/
+    );
+
+    if (!match) return null;
+
+    const [, day, month, year, hour, minute, second] = match;
+    date = new Date(Date.UTC(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    ));
+  }
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getSimulatedStreak(streak, updatedAt) {
+  const updatedDate = parseUpdatedDate(updatedAt);
+  if (!updatedDate) return null;
+
+  const updatedDay = Date.UTC(
+    updatedDate.getFullYear(),
+    updatedDate.getMonth(),
+    updatedDate.getDate()
+  );
+  const today = new Date();
+  const todayDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const daysSinceUpdate = Math.max(0, Math.floor((todayDay - updatedDay) / 86400000));
+
+  return normalizeStreak(streak) + daysSinceUpdate;
 }
 
 function getMedal(position) {
@@ -242,6 +285,10 @@ function renderRanking(items, emptyMessage = "Nenhum streak encontrado.") {
         <span class="streak-number">${item.streak}</span>
         <span class="streak-label">streaks</span>
       </div>
+      <div class="simulated-cell">
+        <span class="streak-number">${getSimulatedStreak(item.streak, item.updatedAt) ?? "-"}</span>
+        <span class="streak-label">hoje</span>
+      </div>
       <div class="updated-cell">${convertToLocalTime(item.updatedAt)}</div>
     `;
 
@@ -250,28 +297,8 @@ function renderRanking(items, emptyMessage = "Nenhum streak encontrado.") {
 }
 
 function convertToLocalTime(utcDateString) {
-  if (!utcDateString) return "Sem data disponível";
-
-  let date = new Date(utcDateString);
-
-  // Keep compatibility with the previous API format: DD/MM/YYYY, HH:MM:SS.
-  if (Number.isNaN(date.getTime())) {
-    const match = String(utcDateString).match(
-      /^(\d{2})\/(\d{2})\/(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})$/
-    );
-
-    if (!match) return utcDateString;
-
-    const [, day, month, year, hour, minute, second] = match;
-    date = new Date(Date.UTC(
-      Number(year),
-      Number(month) - 1,
-      Number(day),
-      Number(hour),
-      Number(minute),
-      Number(second)
-    ));
-  }
+  const date = parseUpdatedDate(utcDateString);
+  if (!date) return utcDateString ? String(utcDateString) : "Sem data disponível";
 
   // ISO timestamps ending in Z are UTC and are converted to the user's timezone.
   return new Intl.DateTimeFormat(undefined, {
