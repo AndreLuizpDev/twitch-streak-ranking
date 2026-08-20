@@ -2,7 +2,7 @@ let TWITCH_CHANNEL = "mrfalll";
 let API_LIMIT = 50;
 let API_MAX_LIMIT = null;
 const LOCAL_PROXY_BASE = 'http://localhost:3000';
-const PROJECT_VERSION = '1.0.8';
+const PROJECT_VERSION = '1.0.9';
 // When developing on localhost use the local proxy. In production you can
 // set `DEPLOYED_PROXY` to a Cloudflare Worker or serverless function URL
 // that forwards requests to the lumosbot API and adds CORS headers.
@@ -42,8 +42,11 @@ const settingsForm = document.getElementById('settingsForm');
 const channelInput = document.getElementById('channelInput');
 const limitInput = document.getElementById('limitInput');
 const cancelSettings = document.getElementById('cancelSettings');
+const sortButtons = document.querySelectorAll('.sort-button');
 
 let lastQueryTimestamp = null;
+let currentRanking = [];
+let sortState = { key: 'projected', direction: 'desc' };
 
 function setStatus(message, type = "") {
   statusBar.textContent = message;
@@ -133,8 +136,44 @@ function processRanking(data) {
       ...item,
       streak: normalizeStreak(item.streak),
     }))
-    .sort((first, second) => second.streak - first.streak)
-    .slice(0, API_LIMIT);
+    .sort((first, second) => {
+      const firstProjected = getSimulatedStreak(first.streak, first.updatedAt) ?? first.streak;
+      const secondProjected = getSimulatedStreak(second.streak, second.updatedAt) ?? second.streak;
+      return secondProjected - firstProjected;
+    })
+    .slice(0, API_LIMIT)
+    .map((item, index) => ({ ...item, originalPosition: index + 1 }));
+}
+
+function getSortValue(item, key) {
+  if (key === 'position') return item.originalPosition;
+  if (key === 'userName') return String(item.userName || '').toLocaleLowerCase();
+  if (key === 'streak') return item.streak;
+  if (key === 'projected') return getSimulatedStreak(item.streak, item.updatedAt) ?? item.streak;
+  if (key === 'updatedAt') return parseUpdatedDate(item.updatedAt)?.getTime() ?? 0;
+  return 0;
+}
+
+function sortRanking(items) {
+  const multiplier = sortState.direction === 'asc' ? 1 : -1;
+
+  return [...items].sort((first, second) => {
+    const firstValue = getSortValue(first, sortState.key);
+    const secondValue = getSortValue(second, sortState.key);
+
+    if (firstValue < secondValue) return -1 * multiplier;
+    if (firstValue > secondValue) return 1 * multiplier;
+    return first.originalPosition - second.originalPosition;
+  });
+}
+
+function updateSortIndicators() {
+  sortButtons.forEach((button) => {
+    const isActive = button.dataset.sort === sortState.key;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-sort', isActive ? sortState.direction : 'none');
+    button.dataset.direction = isActive ? sortState.direction : '';
+  });
 }
 
 function loadSettingsFromSession() {
@@ -340,10 +379,12 @@ async function fetchStreaks({ retryOnLimit = true } = {}) {
     }
 
     const ranking = processRanking(data.data);
+    currentRanking = sortRanking(ranking);
+    updateSortIndicators();
     lastQueryTimestamp = new Date();
-    renderRanking(ranking);
+    renderRanking(currentRanking);
 
-    if (!ranking.length) {
+    if (!currentRanking.length) {
       renderEmptyState("Nenhum streak encontrado.");
       setStatus("Nenhum streak encontrado.", "success");
       return;
@@ -386,6 +427,19 @@ if (settingsForm) {
     applySettingsAndFetch(ch, lim);
   });
 }
+
+sortButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const key = button.dataset.sort;
+    sortState = {
+      key,
+      direction: sortState.key === key && sortState.direction === 'desc' ? 'asc' : 'desc',
+    };
+    currentRanking = sortRanking(currentRanking);
+    updateSortIndicators();
+    renderRanking(currentRanking);
+  });
+});
 
 window.addEventListener("DOMContentLoaded", () => {
   loadSettingsFromSession();

@@ -220,6 +220,35 @@ h1 {
   text-transform: uppercase;
 }
 
+.sort-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.sort-button::after {
+  content: "↕";
+  margin-left: 6px;
+  opacity: 0.45;
+}
+
+.sort-button.active::after {
+  content: attr(data-direction);
+  opacity: 1;
+}
+
+.sort-button:hover,
+.sort-button:focus-visible,
+.sort-button.active {
+  color: var(--text);
+}
+
 .ranking-list {
   display: flex;
   flex-direction: column;

@@ -70,11 +70,11 @@
 
         <section class="ranking-panel">
           <div class="list-header">
-            <span>Posição</span>
-            <span>Usuário</span>
-            <span>Streak</span>
-            <span>Streak hoje</span>
-            <span>Última atualização</span>
+            <button type="button" class="sort-button" data-sort="position" aria-label="Classificar por posição">Posição</button>
+            <button type="button" class="sort-button" data-sort="userName" aria-label="Classificar por usuário">Usuário</button>
+            <button type="button" class="sort-button" data-sort="streak" aria-label="Classificar por streak">Streak</button>
+            <button type="button" class="sort-button" data-sort="projected" aria-label="Classificar por streak de hoje">Streak hoje</button>
+            <button type="button" class="sort-button" data-sort="updatedAt" aria-label="Classificar por última atualização">Última atualização</button>
           </div>
           <div id="rankingList" class="ranking-list" aria-live="polite"></div>
         </section>
